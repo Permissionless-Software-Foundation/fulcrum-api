@@ -43,7 +43,7 @@ async function startApp () {
     app.enable('trust proxy')
 
     // Log each request to the console with IP addresses.
-    // app.use(logger("dev"))
+    app.use(logger('dev'))
     const morganFormat =
       ':remote-addr :remote-user :method :url :status :response-time ms - :res[content-length] :user-agent'
     app.use(logger(morganFormat))

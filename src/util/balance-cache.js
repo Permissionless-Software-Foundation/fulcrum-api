@@ -19,7 +19,7 @@ const axios = require('axios')
 
 // Constants - Change these for your own installation.
 const ONE_MINUTE = 60000 // one minute in milliseconds
-const MAX_CACHE_SIZE = 1000
+// const MAX_CACHE_SIZE = 1000
 // const GC_PERIOD = 30000 // Garbage Collection period
 
 let _this
@@ -52,7 +52,7 @@ class BalanceCache {
     // State
     this.cache = {}
     this.cacheCnt = 0
-    this.maxCacheSize = MAX_CACHE_SIZE
+    // this.maxCacheSize = MAX_CACHE_SIZE
 
     // Start garbage collection timer.
     this.gcTimerHandle = setInterval(this.garbageCollection, ONE_MINUTE)
@@ -96,10 +96,14 @@ class BalanceCache {
 
       console.log(`Balance cache has ${_this.cacheCnt} entries. ${now.toLocaleString()}`)
 
+      // If cacheCnt is zero, then exit.
+      if (!_this.cacheCnt) return
+
       now = now.getTime()
       const oneMinuteAgo = now - ONE_MINUTE
 
-      const entries = Object.entries(this.cache)
+      const entries = Object.entries(_this.cache)
+      // console.log(`entries: ${JSON.stringify(entries, null, 2)}`)
 
       // Loop through each entry in the cache.
       for (let i = 0; i < entries.length; i++) {
@@ -109,7 +113,7 @@ class BalanceCache {
         // If the timestamp is older than the timestamp threshold, delete
         // the entry from the cache.
         if (thisEntry.timestamp < oneMinuteAgo) {
-          delete this.cache[thisAddr]
+          delete _this.cache[thisAddr]
           _this.cacheCnt--
         }
       }
