@@ -22,6 +22,8 @@ const ONE_MINUTE = 60000 // one minute in milliseconds
 const MAX_CACHE_SIZE = 1000
 // const GC_PERIOD = 30000 // Garbage Collection period
 
+let _this
+
 // This creates a cache-object, which represents an address balance.
 class Entry {
   constructor (inObj) {
@@ -32,6 +34,8 @@ class Entry {
     this.addr = addr
     this.balance = balance
     this.timestamp = now.getTime()
+
+    _this = this
   }
 }
 
@@ -89,6 +93,9 @@ class BalanceCache {
   garbageCollection () {
     try {
       let now = new Date()
+
+      console.log(`Balance cache has ${_this.cacheCnt} entries. ${now.toLocaleString()}`)
+
       now = now.getTime()
       const oneMinuteAgo = now - ONE_MINUTE
 
@@ -103,6 +110,7 @@ class BalanceCache {
         // the entry from the cache.
         if (thisEntry.timestamp < oneMinuteAgo) {
           delete this.cache[thisAddr]
+          _this.cacheCnt--
         }
       }
     } catch (err) {
