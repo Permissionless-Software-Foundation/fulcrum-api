@@ -34,8 +34,6 @@ class Entry {
     this.addr = addr
     this.balance = balance
     this.timestamp = now.getTime()
-
-    _this = this
   }
 }
 
@@ -58,6 +56,8 @@ class BalanceCache {
 
     // Start garbage collection timer.
     this.gcTimerHandle = setInterval(this.garbageCollection, ONE_MINUTE)
+
+    _this = this
   }
 
   put (addr, balance) {
