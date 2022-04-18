@@ -7,7 +7,8 @@
     "start": "node src/app.js",
     "test": "npm run test-v1",
     "test-v1": "export NETWORK=mainnet && nyc --reporter=text mocha --exit --timeout 60000 test/v1/",
-    "docs": "./node_modules/.bin/apidoc -i src/routes/v1 -o docs"
+    "docs": "./node_modules/.bin/apidoc -i src/routes/v1 -o docs",
+    "lint": "standard --env mocha --fix"
   },
   "repository": {
     "type": "git",

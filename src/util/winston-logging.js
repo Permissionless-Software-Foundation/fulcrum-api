@@ -23,7 +23,7 @@ const LOG_MAX_FILES = process.env.LOG_MAX_FILES
 
 // Configure daily-rotation transport.
 const transport = new winston.transports.DailyRotateFile({
-  filename: `${__dirname}/../../logs/fulcrum-api-%DATE%.log`,
+  filename: `${__dirname.toString()}/../../logs/fulcrum-api-%DATE%.log`,
   datePattern: 'YYYY-MM-DD',
   zippedArchive: false,
   maxSize: LOG_MAX_SIZE,
@@ -39,7 +39,7 @@ transport.on('rotate', function (oldFilename, newFilename) {
 })
 
 // This controls what goes into the log FILES
-var wlogger = winston.createLogger({
+const wlogger = winston.createLogger({
   level: 'verbose',
   format: winston.format.json(),
   transports: [
