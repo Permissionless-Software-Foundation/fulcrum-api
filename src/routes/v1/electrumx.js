@@ -18,20 +18,20 @@ const wlogger = require('../../util/winston-logging')
 // const config = require('../../../config')
 
 const RouteUtils = require('../route-utils')
+const { BalanceCache } = require('../../util/balance-cache')
 
 let _this
 
 class Electrum {
   constructor () {
-    _this = this
+    // this.config = config
+    this.axios = axios
+    this.routeUtils = new RouteUtils()
+    this.bchjs = new BCHJS()
+    this.bitcore = bitcore
+    this.balanceCache = new BalanceCache({ getBalanceFunc: this._balanceFromElectrumx })
 
-    // _this.config = config
-    _this.axios = axios
-    _this.routeUtils = new RouteUtils()
-    _this.bchjs = new BCHJS()
-    _this.bitcore = bitcore
-
-    _this.electrumx = new ElectrumCash(
+    this.electrumx = new ElectrumCash(
       'bch-api',
       '1.4.1',
       process.env.FULCRUM_URL,
@@ -40,24 +40,26 @@ class Electrum {
       // '50002'
     )
 
-    _this.isReady = false
-    // _this.connectToServers()
+    this.isReady = false
+    // this.connectToServers()
 
-    _this.router = router
-    _this.router.get('/', _this.root)
-    _this.router.get('/utxos/:address', _this.getUtxos)
-    _this.router.post('/utxos', _this.utxosBulk)
-    _this.router.get('/tx/data/:txid', _this.getTransactionDetails)
-    _this.router.post('/tx/data', _this.transactionDetailsBulk)
-    _this.router.post('/tx/broadcast', _this.broadcastTransaction)
-    _this.router.get('/block/headers/:height', _this.getBlockHeaders)
-    _this.router.post('/block/headers', _this.blockHeadersBulk)
-    _this.router.get('/balance/:address', _this.getBalance)
-    _this.router.post('/balance', _this.balanceBulk)
-    _this.router.get('/transactions/:address', _this.getTransactions)
-    _this.router.post('/transactions', _this.transactionsBulk)
-    _this.router.get('/unconfirmed/:address', _this.getMempool)
-    _this.router.post('/unconfirmed', _this.mempoolBulk)
+    this.router = router
+    this.router.get('/', this.root)
+    this.router.get('/utxos/:address', this.getUtxos)
+    this.router.post('/utxos', this.utxosBulk)
+    this.router.get('/tx/data/:txid', this.getTransactionDetails)
+    this.router.post('/tx/data', this.transactionDetailsBulk)
+    this.router.post('/tx/broadcast', this.broadcastTransaction)
+    this.router.get('/block/headers/:height', this.getBlockHeaders)
+    this.router.post('/block/headers', this.blockHeadersBulk)
+    this.router.get('/balance/:address', this.getBalance)
+    this.router.post('/balance', this.balanceBulk)
+    this.router.get('/transactions/:address', this.getTransactions)
+    this.router.post('/transactions', this.transactionsBulk)
+    this.router.get('/unconfirmed/:address', this.getMempool)
+    this.router.post('/unconfirmed', this.mempoolBulk)
+
+    _this = this
   }
 
   // Initializes a connection to electrum servers.
@@ -849,7 +851,11 @@ class Electrum {
       )
 
       // Get data from ElectrumX server.
-      const electrumResponse = await _this._balanceFromElectrumx(cashAddr)
+      // const electrumResponse = await _this._balanceFromElectrumx(cashAddr)
+
+      // New call
+      const electrumResponse = await _this.balanceCache.get(cashAddr)
+
       // console.log(`_utxosFromElectrumx(): ${JSON.stringify(electrumResponse, null, 2)}`)
 
       // Pass the error message if ElectrumX reports an error.
@@ -940,7 +946,12 @@ class Electrum {
       // ElectrumX API in parallel.
       addresses = addresses.map(async (address, index) => {
         // console.log(`address: ${address}`)
-        const balance = await _this._balanceFromElectrumx(address)
+
+        // Old call
+        // const balance = await _this._balanceFromElectrumx(address)
+
+        // New call
+        const balance = await _this.balanceCache.get(address)
 
         return {
           balance,
