@@ -1147,7 +1147,8 @@ describe('#Electrumx', () => {
         electrumxRoute.isReady = true // Force flag.
 
         sandbox
-          .stub(electrumxRoute, '_balanceFromElectrumx')
+          // .stub(electrumxRoute, '_balanceFromElectrumx')
+          .stub(electrumxRoute.balanceCache, 'get')
           .resolves(mockData.balance)
       }
 
@@ -1244,7 +1245,8 @@ describe('#Electrumx', () => {
         electrumxRoute.isReady = true // Force flag.
 
         sandbox
-          .stub(electrumxRoute, '_balanceFromElectrumx')
+          // .stub(electrumxRoute, '_balanceFromElectrumx')
+          .stub(electrumxRoute.balanceCache, 'get')
           .resolves(mockData.balance)
       }
 
@@ -1278,7 +1280,8 @@ describe('#Electrumx', () => {
         electrumxRoute.isReady = true // Force flag.
 
         sandbox
-          .stub(electrumxRoute, '_balanceFromElectrumx')
+          // .stub(electrumxRoute, '_balanceFromElectrumx')
+          .stub(electrumxRoute.balanceCache, 'get')
           .resolves(mockData.balance)
       }
 

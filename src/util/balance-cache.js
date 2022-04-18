@@ -52,7 +52,8 @@ class BalanceCache {
     this.cacheCnt = 0
     this.maxCacheSize = MAX_CACHE_SIZE
 
-    // TODO: Start garbage collection timer.
+    // Start garbage collection timer.
+    this.gcTimerHandle = setInterval(this.garbageCollection, ONE_MINUTE)
   }
 
   put (addr, balance) {
