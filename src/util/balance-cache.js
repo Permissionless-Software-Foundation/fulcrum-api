@@ -94,7 +94,7 @@ class BalanceCache {
     try {
       let now = new Date()
 
-      console.log(`Balance cache has ${_this.cacheCnt} entries. ${now.toLocaleString()}`)
+      console.log(`\nBalance cache has ${_this.cacheCnt} entries. ${now.toLocaleString()}\n`)
 
       // If cacheCnt is zero, then exit.
       if (!_this.cacheCnt) return
