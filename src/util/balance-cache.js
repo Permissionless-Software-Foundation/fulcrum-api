@@ -71,12 +71,14 @@ class BalanceCache {
   }
 
   // Get the tx data from Electrumx if it's not already in the cache.
-  async get (addr) {
-    const entry = this.cache[addr]
+  async get (addr, doNotUseCache = false) {
+    if (!doNotUseCache) {
+      const entry = this.cache[addr]
 
-    // If the data existed in the cache, this function is done.
-    if (entry) {
-      return entry.balance
+      // If the data existed in the cache, this function is done.
+      if (entry) {
+        return entry.balance
+      }
     }
 
     // If balance is not in the cache, then retrieve it from Fulcrum.

@@ -18,6 +18,10 @@ describe('#balance-cache', () => {
     uut = new BalanceCache({ getBalanceFunc: _balanceFromElectrumx })
   })
 
+  afterEach(() => {
+    clearInterval(uut.gcTimerHandle)
+  })
+
   describe('#put', () => {
     it('should throw an error if input is not a string', async () => {
       try {

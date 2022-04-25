@@ -897,6 +897,11 @@ class Electrum {
     try {
       let addresses = req.body.addresses
 
+      // Flag to use the balance cache (true) or not (false).
+      let useCache = req.body.useCache
+      // Ensure the cache is used (by default) if the property is not specified.
+      if (!useCache) useCache = false
+
       // Reject if addresses is not an array.
       if (!Array.isArray(addresses)) {
         res.status(400)
@@ -951,7 +956,7 @@ class Electrum {
         // const balance = await _this._balanceFromElectrumx(address)
 
         // New call
-        const balance = await _this.balanceCache.get(address)
+        const balance = await _this.balanceCache.get(address, !useCache)
 
         return {
           balance,
