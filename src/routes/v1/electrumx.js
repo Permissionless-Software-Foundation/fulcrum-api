@@ -854,7 +854,9 @@ class Electrum {
       // const electrumResponse = await _this._balanceFromElectrumx(cashAddr)
 
       // New call
-      const electrumResponse = await _this.balanceCache.get(cashAddr)
+      // CT 2/3/23 Disabling cache
+      const disableCache = true
+      const electrumResponse = await _this.balanceCache.get(cashAddr, disableCache)
 
       // console.log(`_utxosFromElectrumx(): ${JSON.stringify(electrumResponse, null, 2)}`)
 
@@ -956,6 +958,8 @@ class Electrum {
         // const balance = await _this._balanceFromElectrumx(address)
 
         // New call
+        // CT 2/3/23 Disabling cache
+        useCache = false
         const balance = await _this.balanceCache.get(address, !useCache)
 
         return {
