@@ -159,7 +159,7 @@ class Electrum {
   async _utxosFromElectrumx (address) {
     try {
       // Convert the address to a scripthash.
-      // const scripthash = _this.addressToScripthash(address)
+      const scripthash = _this.addressToScripthash(address)
 
       if (!_this.isReady) {
         throw new Error(
@@ -170,7 +170,7 @@ class Electrum {
       // Query the utxos from the ElectrumX server.
       const electrumResponse = await _this.electrumx.request(
         'blockchain.scripthash.listunspent',
-        address
+        scripthash
       )
       // console.log(
       //   `electrumResponse: ${JSON.stringify(electrumResponse, null, 2)}`
