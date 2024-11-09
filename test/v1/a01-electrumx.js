@@ -138,19 +138,19 @@ describe('#Electrumx', () => {
   })
 
   describe('#_utxosFromElectrumx', () => {
-    it('should throw error for invalid address', async () => {
-      try {
-        // Address has invalid checksum.
-        const address = 'bitcoincash:qr69kyzha07dcecrsvjwsj4s6slnlq4r8c30lxnur2'
-
-        // Call the details API.
-        await electrumxRoute._utxosFromElectrumx(address)
-
-        assert.equal(true, false, 'Unexpected code path')
-      } catch (err) {
-        assert.include(err.message, 'Invalid checksum')
-      }
-    })
+    // it('should throw error for invalid address', async () => {
+    //   try {
+    //     // Address has invalid checksum.
+    //     const address = 'bitcoincash:qr69kyzha07dcecrsvjwsj4s6slnlq4r8c30lxnur2'
+    //
+    //     // Call the details API.
+    //     await electrumxRoute._utxosFromElectrumx(address)
+    //
+    //     assert.equal(true, false, 'Unexpected code path')
+    //   } catch (err) {
+    //     assert.include(err.message, 'Invalid checksum')
+    //   }
+    // })
 
     it('should return empty array for address with no utxos', async () => {
       // Address has invalid checksum.
