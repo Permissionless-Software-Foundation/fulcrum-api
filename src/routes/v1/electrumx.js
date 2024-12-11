@@ -1375,14 +1375,30 @@ class Electrum {
   addressToScripthash (addrStr) {
     try {
       // console.log(`addrStr: ${addrStr}`)
-
-      const address = _this.bitcore.Address.fromString(addrStr)
+      
+      const info = _this.bitcore.Address._transformString(addrStr);
       // console.log(`address: ${address}`)
 
-      const script = address.isPayToPublicKeyHash()
-        ? _this.bitcore.Script.buildPublicKeyHashOut(address)
-        : _this.bitcore.Script.buildScriptHashOut(address)
-      // console.log(`script: ${script}`)
+      let script;
+      if(info.type === _this.bitcore.Address.PayToPublicKeyHash) {
+        const address = new _this.bitcore.Address(info.hashBuffer, info.network, info.type);
+        script = _this.bitcore.Script.buildPublicKeyHashOut(address);
+      } else {
+        var s = new _this.bitcore.Script();
+        s._network = info.network;
+
+        if(info.hashBuffer.length === 32) {
+          s.add(_this.bitcore.Opcode.OP_HASH256);
+        } else if(info.hashBuffer.length === 20) {
+          s.add(_this.bitcore.Opcode.OP_HASH160)
+        } else {
+          throw new Error("Invalid script data length")
+        }
+
+        s.add(info.hashBuffer);
+        s.add(_this.bitcore.Opcode.OP_EQUAL);
+        script = s;
+      }
 
       const scripthash = _this.bitcore.crypto.Hash.sha256(script.toBuffer())
         .reverse()
