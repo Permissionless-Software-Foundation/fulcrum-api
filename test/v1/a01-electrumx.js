@@ -27,6 +27,15 @@ const mockData = require('./mocks/electrumx-mock')
 const util = require('util')
 util.inspect.defaultOptions = { depth: 1 }
 
+// P2SH32 addresses (32-byte script hash, used by CashScript contracts)
+const P2SH32_MAINNET_ADDRESS = 'bitcoincash:pdk82s4d8v2yh85z5gu2zpsljmdz0vkegys22u7prv6p6hz73957uy47s9xup'
+const P2SH32_TESTNET_ADDRESS = 'bchtest:pdk82s4d8v2yh85z5gu2zpsljmdz0vkegys22u7prv6p6hz73957u8j0wa4fn'
+
+// Cash addresses with a valid checksum that are not standard BCH addresses
+const P2PKH_32_BYTE_HASH_ADDRESS = 'bitcoincash:qdk82s4d8v2yh85z5gu2zpsljmdz0vkegys22u7prv6p6hz73957udgsyajys'
+const P2SH_24_BYTE_HASH_ADDRESS = 'bitcoincash:p9k82s4d8v2yh85z5gu2zpsljmdz0vkegys22u7p9nqcdcyw'
+const P2SH32_ECASH_ADDRESS = 'ecash:pdk82s4d8v2yh85z5gu2zpsljmdz0vkegys22u7prv6p6hz73957u7gemdpyt'
+
 // A wrapper for asserting that the correct response is returned when an error
 // is expected.
 function expectRouteError (res, result, expectedError, code = 400) {
@@ -134,6 +143,42 @@ describe('#Electrumx', () => {
         '8bc2235c8e7d5634d9ec429fc0171f2c58e728d4f1e2fb7e440e313133cfa4f0'
 
       assert.equal(scripthash, expectedOutput)
+    })
+  })
+
+  describe('#_isP2sh32Address', () => {
+    it('should return true for a P2SH32 address', () => {
+      assert.equal(electrumxRoute._isP2sh32Address(P2SH32_MAINNET_ADDRESS), true)
+    })
+
+    it('should return true for a P2SH32 address without a prefix', () => {
+      const addr = P2SH32_MAINNET_ADDRESS.split(':')[1]
+
+      assert.equal(electrumxRoute._isP2sh32Address(addr), true)
+    })
+
+    it('should return false for a P2SH address with a 20-byte hash', () => {
+      const addr = 'bitcoincash:pz0z7u9p96h2p6hfychxdrmwgdlzpk5luc5yks2wxq'
+
+      assert.equal(electrumxRoute._isP2sh32Address(addr), false)
+    })
+
+    it('should return false for a P2PKH address with a 32-byte hash', () => {
+      assert.equal(electrumxRoute._isP2sh32Address(P2PKH_32_BYTE_HASH_ADDRESS), false)
+    })
+
+    it('should return false for a P2SH address with a 24-byte hash', () => {
+      assert.equal(electrumxRoute._isP2sh32Address(P2SH_24_BYTE_HASH_ADDRESS), false)
+    })
+
+    it('should return false for a P2SH32 address with an eCash prefix', () => {
+      assert.equal(electrumxRoute._isP2sh32Address(P2SH32_ECASH_ADDRESS), false)
+    })
+
+    it('should return false for an invalid address', () => {
+      const addr = '02v05l7qs5s24srqju498qu55dwuj0cx5ehjm2c'
+
+      assert.equal(electrumxRoute._isP2sh32Address(addr), false)
     })
   })
 
@@ -440,6 +485,53 @@ describe('#Electrumx', () => {
       assert.isArray(result.utxos)
       assert.isArray(result.utxos[0].utxos)
       assert.equal(result.utxos.length, 2, '2 outputs for 2 inputs')
+    })
+
+    it('should get utxos for a P2SH32 address', async () => {
+      req.body = {
+        addresses: [P2SH32_MAINNET_ADDRESS]
+      }
+
+      // Mock the Insight URL for unit tests.
+      if (process.env.TEST === 'unit') {
+        electrumxRoute.isReady = true // Force flag.
+
+        sandbox
+          .stub(electrumxRoute, '_utxosFromElectrumx')
+          .resolves(mockData.utxos)
+      }
+
+      const result = await electrumxRoute.utxosBulk(req, res)
+
+      assert.equal(result.success, true)
+      assert.equal(result.utxos[0].address, P2SH32_MAINNET_ADDRESS)
+      assert.isArray(result.utxos[0].utxos)
+
+      if (process.env.TEST === 'unit') {
+        assert.isTrue(electrumxRoute._utxosFromElectrumx.calledOnceWith(P2SH32_MAINNET_ADDRESS))
+      }
+    })
+
+    it('should detect a network mismatch for a P2SH32 address', async () => {
+      req.body = {
+        addresses: [P2SH32_TESTNET_ADDRESS]
+      }
+
+      const result = await electrumxRoute.utxosBulk(req, res)
+
+      assert.equal(res.statusCode, 400, 'HTTP status code 400 expected.')
+      assert.include(result.error, 'Invalid network', 'Proper error message')
+    })
+
+    it('should throw an error for a P2PKH address with a 32-byte hash', async () => {
+      req.body = {
+        addresses: [P2PKH_32_BYTE_HASH_ADDRESS]
+      }
+
+      const result = await electrumxRoute.utxosBulk(req, res)
+
+      assert.equal(res.statusCode, 400, 'HTTP status code 400 expected.')
+      assert.include(result.error, 'Invalid BCH address', 'Proper error message')
     })
   })
 
@@ -1295,6 +1387,32 @@ describe('#Electrumx', () => {
       assert.isArray(result.balances)
       assert.equal(result.balances.length, 2, '2 outputs for 2 inputs')
     })
+
+    it('should get the balance for a P2SH32 address', async () => {
+      req.body = {
+        addresses: [P2SH32_MAINNET_ADDRESS]
+      }
+
+      // Mock the Insight URL for unit tests.
+      if (process.env.TEST === 'unit') {
+        electrumxRoute.isReady = true // Force flag.
+
+        sandbox
+          .stub(electrumxRoute.balanceCache, 'get')
+          .resolves(mockData.balance)
+      }
+
+      const result = await electrumxRoute.balanceBulk(req, res)
+
+      assert.equal(result.success, true)
+      assert.equal(result.balances[0].address, P2SH32_MAINNET_ADDRESS)
+      assert.property(result.balances[0].balance, 'confirmed')
+
+      if (process.env.TEST === 'unit') {
+        assert.isTrue(electrumxRoute.balanceCache.get.calledOnce)
+        assert.equal(electrumxRoute.balanceCache.get.firstCall.args[0], P2SH32_MAINNET_ADDRESS)
+      }
+    })
   })
 
   describe('#_transactionsFromElectrumx', () => {
@@ -1583,6 +1701,31 @@ describe('#Electrumx', () => {
 
       assert.isArray(result.transactions)
       assert.equal(result.transactions.length, 2, '2 outputs for 2 inputs')
+    })
+
+    it('should get transactions for a P2SH32 address', async () => {
+      req.body = {
+        addresses: [P2SH32_MAINNET_ADDRESS]
+      }
+
+      // Mock the Insight URL for unit tests.
+      if (process.env.TEST === 'unit') {
+        electrumxRoute.isReady = true // Force flag.
+
+        sandbox
+          .stub(electrumxRoute, '_transactionsFromElectrumx')
+          .resolves(mockData.txHistory)
+      }
+
+      const result = await electrumxRoute.transactionsBulk(req, res)
+
+      assert.equal(result.success, true)
+      assert.equal(result.transactions[0].address, P2SH32_MAINNET_ADDRESS)
+      assert.isArray(result.transactions[0].transactions)
+
+      if (process.env.TEST === 'unit') {
+        assert.isTrue(electrumxRoute._transactionsFromElectrumx.calledOnceWith(P2SH32_MAINNET_ADDRESS))
+      }
     })
   })
 
@@ -1897,6 +2040,31 @@ describe('#Electrumx', () => {
       assert.isArray(result.utxos)
       assert.isArray(result.utxos[0].utxos)
       assert.equal(result.utxos.length, 2, '2 outputs for 2 inputs')
+    })
+
+    it('should get mempool details for a P2SH32 address', async () => {
+      req.body = {
+        addresses: [P2SH32_MAINNET_ADDRESS]
+      }
+
+      // Mock the Insight URL for unit tests.
+      if (process.env.TEST === 'unit') {
+        electrumxRoute.isReady = true // Force flag.
+
+        sandbox
+          .stub(electrumxRoute, '_mempoolFromElectrumx')
+          .resolves(mockData.mempool)
+      }
+
+      const result = await electrumxRoute.mempoolBulk(req, res)
+
+      assert.equal(result.success, true)
+      assert.equal(result.utxos[0].address, P2SH32_MAINNET_ADDRESS)
+      assert.isArray(result.utxos[0].utxos)
+
+      if (process.env.TEST === 'unit') {
+        assert.isTrue(electrumxRoute._mempoolFromElectrumx.calledOnceWith(P2SH32_MAINNET_ADDRESS))
+      }
     })
   })
 })

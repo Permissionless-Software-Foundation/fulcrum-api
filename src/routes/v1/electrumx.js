@@ -304,10 +304,13 @@ class Electrum {
         try {
           _this.bchjs.Address.toLegacyAddress(thisAddress)
         } catch (err) {
-          res.status(400)
-          return res.json({
-            error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
-          })
+          // P2SH32 addresses have no legacy format, but they are valid.
+          if (!_this._isP2sh32Address(thisAddress)) {
+            res.status(400)
+            return res.json({
+              error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
+            })
+          }
         }
 
         // Prevent a common user error. Ensure they are using the correct network address.
@@ -934,10 +937,13 @@ class Electrum {
         try {
           _this.bchjs.Address.toLegacyAddress(thisAddress)
         } catch (err) {
-          res.status(400)
-          return res.json({
-            error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
-          })
+          // P2SH32 addresses have no legacy format, but they are valid.
+          if (!_this._isP2sh32Address(thisAddress)) {
+            res.status(400)
+            return res.json({
+              error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
+            })
+          }
         }
 
         // Prevent a common user error. Ensure they are using the correct network address.
@@ -1134,10 +1140,13 @@ class Electrum {
         try {
           _this.bchjs.Address.toLegacyAddress(thisAddress)
         } catch (err) {
-          res.status(400)
-          return res.json({
-            error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
-          })
+          // P2SH32 addresses have no legacy format, but they are valid.
+          if (!_this._isP2sh32Address(thisAddress)) {
+            res.status(400)
+            return res.json({
+              error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
+            })
+          }
         }
 
         // Prevent a common user error. Ensure they are using the correct network address.
@@ -1327,10 +1336,13 @@ class Electrum {
         try {
           _this.bchjs.Address.toLegacyAddress(thisAddress)
         } catch (err) {
-          res.status(400)
-          return res.json({
-            error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
-          })
+          // P2SH32 addresses have no legacy format, but they are valid.
+          if (!_this._isP2sh32Address(thisAddress)) {
+            res.status(400)
+            return res.json({
+              error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
+            })
+          }
         }
 
         // Prevent a common user error. Ensure they are using the correct network address.
@@ -1371,33 +1383,47 @@ class Electrum {
     }
   }
 
+  // Returns true for a P2SH32 address (a 32-byte script hash, used by
+  // CashScript contracts) on a BCH prefix. The legacy address format can
+  // only hold 20 bytes, so toLegacyAddress() throws for these addresses.
+  _isP2sh32Address (address) {
+    try {
+      const { prefix, type, hash } = _this.bchjs.Address._decode(address)
+
+      return ['bitcoincash', 'bchtest', 'bchreg'].includes(prefix) &&
+        type === 'P2SH' && hash.length === 32
+    } catch (err) {
+      return false
+    }
+  }
+
   // Convert a 'bitcoincash:...' address to a script hash used by ElectrumX.
   addressToScripthash (addrStr) {
     try {
       // console.log(`addrStr: ${addrStr}`)
-      
-      const info = _this.bitcore.Address._transformString(addrStr);
+
+      const info = _this.bitcore.Address._transformString(addrStr)
       // console.log(`address: ${address}`)
 
-      let script;
-      if(info.type === _this.bitcore.Address.PayToPublicKeyHash) {
-        const address = new _this.bitcore.Address(info.hashBuffer, info.network, info.type);
-        script = _this.bitcore.Script.buildPublicKeyHashOut(address);
+      let script
+      if (info.type === _this.bitcore.Address.PayToPublicKeyHash) {
+        const address = new _this.bitcore.Address(info.hashBuffer, info.network, info.type)
+        script = _this.bitcore.Script.buildPublicKeyHashOut(address)
       } else {
-        var s = new _this.bitcore.Script();
-        s._network = info.network;
+        const s = new _this.bitcore.Script()
+        s._network = info.network
 
-        if(info.hashBuffer.length === 32) {
-          s.add(_this.bitcore.Opcode.OP_HASH256);
-        } else if(info.hashBuffer.length === 20) {
+        if (info.hashBuffer.length === 32) {
+          s.add(_this.bitcore.Opcode.OP_HASH256)
+        } else if (info.hashBuffer.length === 20) {
           s.add(_this.bitcore.Opcode.OP_HASH160)
         } else {
-          throw new Error("Invalid script data length")
+          throw new Error('Invalid script data length')
         }
 
-        s.add(info.hashBuffer);
-        s.add(_this.bitcore.Opcode.OP_EQUAL);
-        script = s;
+        s.add(info.hashBuffer)
+        s.add(_this.bitcore.Opcode.OP_EQUAL)
+        script = s
       }
 
       const scripthash = _this.bitcore.crypto.Hash.sha256(script.toBuffer())
