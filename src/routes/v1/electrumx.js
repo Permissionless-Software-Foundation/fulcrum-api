@@ -304,10 +304,13 @@ class Electrum {
         try {
           _this.bchjs.Address.toLegacyAddress(thisAddress)
         } catch (err) {
-          res.status(400)
-          return res.json({
-            error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
-          })
+          // P2SH32 addresses have no legacy format, but they are valid.
+          if (!_this._isP2sh32Address(thisAddress)) {
+            res.status(400)
+            return res.json({
+              error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
+            })
+          }
         }
 
         // Prevent a common user error. Ensure they are using the correct network address.
@@ -934,10 +937,13 @@ class Electrum {
         try {
           _this.bchjs.Address.toLegacyAddress(thisAddress)
         } catch (err) {
-          res.status(400)
-          return res.json({
-            error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
-          })
+          // P2SH32 addresses have no legacy format, but they are valid.
+          if (!_this._isP2sh32Address(thisAddress)) {
+            res.status(400)
+            return res.json({
+              error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
+            })
+          }
         }
 
         // Prevent a common user error. Ensure they are using the correct network address.
@@ -1134,10 +1140,13 @@ class Electrum {
         try {
           _this.bchjs.Address.toLegacyAddress(thisAddress)
         } catch (err) {
-          res.status(400)
-          return res.json({
-            error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
-          })
+          // P2SH32 addresses have no legacy format, but they are valid.
+          if (!_this._isP2sh32Address(thisAddress)) {
+            res.status(400)
+            return res.json({
+              error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
+            })
+          }
         }
 
         // Prevent a common user error. Ensure they are using the correct network address.
@@ -1327,10 +1336,13 @@ class Electrum {
         try {
           _this.bchjs.Address.toLegacyAddress(thisAddress)
         } catch (err) {
-          res.status(400)
-          return res.json({
-            error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
-          })
+          // P2SH32 addresses have no legacy format, but they are valid.
+          if (!_this._isP2sh32Address(thisAddress)) {
+            res.status(400)
+            return res.json({
+              error: `Invalid BCH address. Double check your address is valid: ${thisAddress}`
+            })
+          }
         }
 
         // Prevent a common user error. Ensure they are using the correct network address.
@@ -1368,6 +1380,20 @@ class Electrum {
       wlogger.error('Error in electrumx.js/mempoolBulk().', err)
 
       return _this.errorHandler(err, res)
+    }
+  }
+
+  // Returns true for a P2SH32 address (a 32-byte script hash, used by
+  // CashScript contracts) on a BCH prefix. The legacy address format can
+  // only hold 20 bytes, so toLegacyAddress() throws for these addresses.
+  _isP2sh32Address (address) {
+    try {
+      const { prefix, type, hash } = _this.bchjs.Address._decode(address)
+
+      return ['bitcoincash', 'bchtest', 'bchreg'].includes(prefix) &&
+        type === 'P2SH' && hash.length === 32
+    } catch (err) {
+      return false
     }
   }
 
